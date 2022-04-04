@@ -202,6 +202,7 @@ localparam CONF_STR = {
 	"H0O2,Orientation,Vert,Horz;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",  
 	"-;",
+	"OC,Cabinet,Upright,Cocktail;",
 	"OD,Test,Off,On;",
 	"-;",
 	"DIP;",
@@ -301,11 +302,12 @@ wire m_left   = joy[1];
 wire m_right  = joy[0];
 wire m_fire   = joy[4] | ps2_mouse[0];
 
-wire m_start1 = joy[5];
+wire m_start1 = joystick_0[5];
 wire m_start2 = joy[6];
 wire m_coin   = joy[7];
 
 wire m_test = ~status[13];
+wire m_cocktail = status[12];
 wire m_slam = 1'b1;//generate Noise
 wire m_pause   = joy[8];
 
@@ -359,7 +361,6 @@ arcade_video #(256,9,1) arcade_video
 
 );
 
-
 wire [7:0] audio;
 assign AUDIO_L = {audio,audio};
 assign AUDIO_R = AUDIO_L;
@@ -374,9 +375,9 @@ wire [7:0] sw2_i;
 wire [9:0] playerinput_i;
 
 // inputs: coin R, coin C, coin L, self test, cocktail, slam, start 2, start 1, fire 2, fire 1
-assign playerinput_i = { 1'b1, 1'b1, ~(m_coin), m_test, status[12], m_slam, ~(m_start2), ~(m_start1), ~m_fire_2, ~m_fire };
+assign playerinput_i = ~{ 2'b00, m_coin, ~m_test, ~m_cocktail, ~m_slam, m_start2, m_start1, m_fire_2, m_fire };
 
-assign joystick_i = { ~m_right,~m_left,~m_down,~m_up, ~m_right_2,~m_left_2,~m_down_2,~m_up_2};
+assign joystick_i = ~{ m_right, m_left, m_down, m_up, m_right_2, m_left_2, m_down_2, m_up_2};
 
 assign trakball_i = {trakdata[3],trakdata[3],trakdata[2],trakdata[2],trakdata[1],trakdata[1],trakdata[0],trakdata[0]};
 reg [3:0] trakdata;
@@ -421,42 +422,42 @@ end
 
 wire rom_download = ioctl_download & !ioctl_index;
 wire nvram_download = ioctl_download & ioctl_index == 8'd4;
-wire reset = (RESET | status[0] | buttons[1] | rom_download);
+wire reset = (RESET | status[0] | buttons[1] | rom_download | nvram_download);
 wire clk_6_o;
 
-   // game & cpu
-   centipede uut(
-		 .clk_12mhz(clk_12),
- 		 .reset(reset),
-		 .playerinput_i(playerinput_i),
-		 .trakball_i(trakball_i),
-		 .flip_o(flip),
-		 .joystick_i(joystick_i),
-		 .sw1_i(sw[0]),
-		 .sw2_i(sw[1]),
-		 .led_o(led_o),
-		 .audio_o(audio),
+// game & cpu
+centipede uut(
+	 .clk_12mhz(clk_12),
+	 .reset(reset),
+	 .playerinput_i(playerinput_i),
+	 .trakball_i(trakball_i),
+	 .flip_o(flip),
+	 .joystick_i(joystick_i),
+	 .sw1_i(sw[0]),
+	 .sw2_i(sw[1]),
+	 .led_o(led_o),
+	 .audio_o(audio),
 
-		 .dn_addr(ioctl_addr[15:0]),
-		 .dn_data(ioctl_dout),
-		 .dn_wr(ioctl_wr & rom_download),
-		 
-		 .rgb_o(rgb_in),
-		 .sync_o(),
-		 .hsync_o(hs),
-		 .vsync_o(vs),
-		 .hblank_o(hblank),
-		 .vblank_o(vblank),
-		 .clk_6mhz_o(clk_6_o),
+	 .dn_addr(ioctl_addr[15:0]),
+	 .dn_data(ioctl_dout),
+	 .dn_wr(ioctl_wr & rom_download),
+	 
+	 .rgb_o(rgb_in),
+	 .sync_o(),
+	 .hsync_o(hs),
+	 .vsync_o(vs),
+	 .hblank_o(hblank),
+	 .vblank_o(vblank),
+	 .clk_6mhz_o(clk_6_o),
 
-		.pause(pause_cpu),
+	.pause(pause_cpu),
 
-		.hs_address(ioctl_download ? ioctl_addr[5:0] : hs_address),
-		.hs_data_out(hs_data_out),
-		.hs_data_in(ioctl_dout),
-		.hs_write(ioctl_wr & nvram_download)
+	.hs_address(ioctl_download ? ioctl_addr[5:0] : hs_address),
+	.hs_data_out(hs_data_out),
+	.hs_data_in(ioctl_dout),
+	.hs_write(ioctl_wr & nvram_download)
 
-		 );
+	 );
 
 // HISCORE SYSTEM
 // --------------
