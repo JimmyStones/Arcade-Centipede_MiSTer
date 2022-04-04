@@ -562,6 +562,7 @@ int main(int argc, char** argv, char** env) {
 	input.SetMapping(input_down, DIK_DOWN);
 	input.SetMapping(input_left, DIK_LEFT);
 	input.SetMapping(input_fire1, DIK_SPACE);
+	input.SetMapping(input_fire2, DIK_RCONTROL);
 	input.SetMapping(input_start_1, DIK_1);
 	input.SetMapping(input_start_2, DIK_2);
 	input.SetMapping(input_coin_1, DIK_5);

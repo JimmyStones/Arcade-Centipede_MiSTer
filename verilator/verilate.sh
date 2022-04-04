@@ -1,7 +1,7 @@
 verilator \
 -cc -exe --public \
 --compiler msvc +define+SIMULATION=1 \
--Wno-fatal \
+-Wno-fatal -Wno-COMBDLY \
 -O3 --x-assign fast --x-initial fast --noassert \
 --error-limit 1000 \
 --converge-limit 6000 \
