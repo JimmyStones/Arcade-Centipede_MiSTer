@@ -53,7 +53,7 @@ module top(
 	assign playerinput[8] = ~inputs[9]; // coin m
 	assign playerinput[7] = ~inputs[8]; // coin l
 	assign playerinput[6] = 1'b1;       // self-test
-	assign playerinput[5] = 1'b0;       // cocktail
+	assign playerinput[5] = 1'b0;       // 1 = cocktail, 0 = upright
 	assign playerinput[4] = 1'b1;       // slam
 	assign playerinput[3] = ~inputs[7]; // start 2
 	assign playerinput[2] = ~inputs[6]; // start 1

@@ -344,6 +344,7 @@ always @(posedge clk_24) begin
 end
 wire no_rotate = status[2] | direct_video ;
 wire rotate_ccw = 1;
+wire flip = 0;
 screen_rotate screen_rotate (.*);
 
 arcade_video #(256,9,1) arcade_video
@@ -366,7 +367,7 @@ assign AUDIO_L = {audio,audio};
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 0;
 
-wire flip;
+wire flip_controls;
 wire [3:0] led_o;
 wire [7:0] trakball_i;
 wire [7:0] joystick_i;
@@ -431,7 +432,7 @@ centipede uut(
 	 .reset(reset),
 	 .playerinput_i(playerinput_i),
 	 .trakball_i(trakball_i),
-	 .flip_o(flip),
+	 .flip_o(flip_controls),
 	 .joystick_i(joystick_i),
 	 .sw1_i(sw[0]),
 	 .sw2_i(sw[1]),
