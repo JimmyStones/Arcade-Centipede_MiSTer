@@ -12,6 +12,8 @@
 struct SimBus_DownloadChunk {
 public:
 	std::string file;
+	std::queue<char> contentQueue;
+	bool isQueue;
 	int index;
 	bool restart;
 	
@@ -24,11 +26,19 @@ public:
 		this->restart = false;
 		this->file = std::string(file);
 		this->index = index;
+		this->isQueue = false;
 	}
 	SimBus_DownloadChunk(std::string file, int index, bool restart) {
 		this->restart = restart;
 		this->file = std::string(file);
 		this->index = index;
+		this->isQueue = false;
+	}
+	SimBus_DownloadChunk(int index, bool restart) {
+		this->restart = restart;
+		this->contentQueue = std::queue<char>();
+		this->index = index;
+		this->isQueue = true;
 	}
 };
 
@@ -49,6 +59,7 @@ public:
 	void QueueDownload(std::string file, int index);
 	void QueueDownload(std::string file, int index, bool restart);
 	bool HasQueue();
+	void LoadMRA(std::string file);
 
 	SimBus(DebugConsole c);
 	~SimBus();

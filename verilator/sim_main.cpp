@@ -585,13 +585,7 @@ int main(int argc, char** argv, char** env) {
 	// Setup video output
 	if (video.Initialise(windowTitle) == 1) { return 1; }
 
-	bus.QueueDownload("./roms/centiped/136001-407.d1", 0, false);
-	bus.QueueDownload("./roms/centiped/136001-408.e1", 0, false);
-	bus.QueueDownload("./roms/centiped/136001-409.fh1", 0, false);
-	bus.QueueDownload("./roms/centiped/136001-410.j1", 0, false);
-	bus.QueueDownload("./roms/centiped/136001-211.f7", 0, false);
-	bus.QueueDownload("./roms/centiped/136001-212.hj7", 0, false);
-	bus.QueueDownload("./roms/centiped/136001-213.p4", 0, false);
+	bus.LoadMRA("../releases/Centipede (Rev 3).mra");
 
 	bus.QueueDownload("./roms/earom", 4, true);
 

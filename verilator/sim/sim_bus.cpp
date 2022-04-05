@@ -1,10 +1,15 @@
-#include <iostream>
 #include <queue>
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 #include "sim_bus.h"
 #include "sim_console.h"
 #include "verilated_heavy.h"
+
+#include "inc/rapidxml.hpp"
 
 #ifndef _MSC_VER
 #else
@@ -14,6 +19,7 @@
 
 static DebugConsole console;
 
+bool ioctl_active = false;
 FILE* ioctl_file = NULL;
 int ioctl_next_addr = -1;
 int ioctl_last_index = -1;
@@ -41,11 +47,100 @@ bool SimBus::HasQueue() {
 	return downloadQueue.size() > 0;
 }
 
+void SimBus::LoadMRA(std::string file) {
+
+	rapidxml::xml_document<> doc;
+	rapidxml::xml_node<>* root_node = NULL;
+
+	// Read the sample.xml file
+	std::ifstream fileStream(file);
+	std::vector<char> buffer((std::istreambuf_iterator<char>(fileStream)), std::istreambuf_iterator<char>());
+	buffer.push_back('\0');
+
+	// Parse the buffer
+	doc.parse<0>(&buffer[0]);
+
+	// Find the root node
+	root_node = doc.first_node("misterromdescription");
+
+	int lastIndex = -1;
+
+	// Iterate over the <rom> nodes
+	for (rapidxml::xml_node<>* rom_node = root_node->first_node("rom"); rom_node; rom_node = rom_node->next_sibling())
+	{
+		rapidxml::xml_attribute<>* index = rom_node->first_attribute("index");
+		if (index != NULL) {
+			int indexValue = std::stoi(index->value());
+
+			//console.AddLog("Loading rom: %d", indexValue);
+
+			std::string rom_zip_name = "";
+			rapidxml::xml_attribute<>* rom_zip_name_att = rom_node->first_attribute("zip");
+			if (rom_zip_name_att != NULL) {
+				rom_zip_name = rom_zip_name_att->value();
+				rom_zip_name = rom_zip_name.substr(0, rom_zip_name.length() - 4);
+			}
+
+			for (rapidxml::xml_node<>* part_node = rom_node->first_node("part"); part_node; part_node = part_node->next_sibling())
+			{
+				std::string part_name = "";
+				std::string part_zip_name = rom_zip_name;
+				rapidxml::xml_attribute<>* part_name_att = part_node->first_attribute("name");
+				if (part_name_att != NULL) {
+					part_name = part_name_att->value();
+				}
+				rapidxml::xml_attribute<>* part_zip_name_att = part_node->first_attribute("zip");
+				if (part_zip_name_att != NULL) {
+					part_zip_name = part_zip_name_att->value();
+					part_zip_name = part_zip_name.substr(0, part_zip_name.length() - 4);
+				}
+
+				if (part_name.length() > 0) {
+					std::string part_path = "roms/" + part_zip_name + "/" + part_name;
+					//console.AddLog("Loading ROM part from file: %s", part_path.c_str());
+					QueueDownload(part_path, indexValue, lastIndex != indexValue);
+				}
+				else {
+
+					SimBus_DownloadChunk chunk = SimBus_DownloadChunk(indexValue, lastIndex != indexValue);
+
+					int part_repeat = 1;
+					rapidxml::xml_attribute<>* part_repeat_att = part_node->first_attribute("repeat");
+					if (part_repeat_att != NULL) {
+						part_repeat = std::stoi(part_repeat_att->value());
+					}
+					std::string hex_chars = part_node->value();
+					std::istringstream hex_chars_stream(hex_chars);
+					std::vector<unsigned char> bytes;
+					unsigned int c;
+					while (hex_chars_stream >> std::hex >> c)
+					{
+						bytes.push_back(c);
+					}
+
+					for (int r = 0; r < part_repeat; r++) {
+						for (int b = 0; b < bytes.size(); b++) {
+							chunk.contentQueue.push(bytes[b]);
+						}
+					}
+
+					//console.AddLog("Creating ROM part repeat=%d  len=%d", part_repeat, chunk.contentQueue.size());
+					downloadQueue.push(chunk);
+				}
+
+
+				lastIndex = indexValue;
+			}
+		}
+	}
+
+}
+
 int nextchar = 0;
 void SimBus::BeforeEval()
 {
-	// If no file is open and there is a download queued
-	if (!ioctl_file && downloadQueue.size() > 0) {
+	// If no download is active and there is a download queued
+	if (!ioctl_active && downloadQueue.size() > 0) {
 
 		// Get chunk from queue
 		currentDownload = downloadQueue.front();
@@ -61,40 +156,79 @@ void SimBus::BeforeEval()
 		*ioctl_index = currentDownload.index;
 
 		// Open file
-		ioctl_file = fopen(currentDownload.file.c_str(), "rb");
-		if (!ioctl_file) {
-			console.AddLog("Cannot open file for download %s\n", currentDownload.file.c_str());
+		if (!currentDownload.isQueue) {
+			ioctl_file = fopen(currentDownload.file.c_str(), "rb");
+			if (!ioctl_file) {
+				console.AddLog("Cannot open file for download %s\n", currentDownload.file.c_str());
+			}
+			else {
+				ioctl_active = true;
+				console.AddLog("Starting download from file: %s %d index=%d", currentDownload.file.c_str(), ioctl_next_addr, currentDownload.index);
+			}
 		}
 		else {
-			console.AddLog("Starting download: %s %d", currentDownload.file.c_str(), ioctl_next_addr, ioctl_next_addr);
+			console.AddLog("Starting download from queue: %d index=%d", ioctl_next_addr, currentDownload.index);
+			ioctl_active = true;
+			nextchar = currentDownload.contentQueue.front();
+			if (ioctl_next_addr == -1) {
+				ioctl_next_addr = 0;
+			}
 		}
 	}
+	else
+	{
 
-	if (ioctl_file) {
-		//console.AddLog("ioctl_download addr %x  ioctl_wait %x", *ioctl_addr, *ioctl_wait);
-		if (*ioctl_wait == 0) {
-			*ioctl_download = 1;
-			*ioctl_wr = 1;
-			if (feof(ioctl_file)) {
-				fclose(ioctl_file);
-				ioctl_file = NULL;
-				*ioctl_download = 0;
-				*ioctl_wr = 0;
-				console.AddLog("ioctl_download complete %d", ioctl_next_addr);
-			}
+
+		bool complete = false;
+		if (!currentDownload.isQueue) {
 			if (ioctl_file) {
-				int curchar = fgetc(ioctl_file);
-				if (feof(ioctl_file) == 0) {
-					nextchar = curchar;
-					//console.AddLog("ioctl_download: dout %x \n", *ioctl_dout);
-					ioctl_next_addr++;
+				//console.AddLog("ioctl_download addr %x  ioctl_wait %x", *ioctl_addr, *ioctl_wait);
+				if (*ioctl_wait == 0) {
+					*ioctl_download = 1;
+					*ioctl_wr = 1;
+					if (feof(ioctl_file)) {
+						fclose(ioctl_file);
+						ioctl_file = NULL;
+						ioctl_active = false;
+						*ioctl_download = 0;
+						*ioctl_wr = 0;
+						//console.AddLog("ioctl_download complete %d", ioctl_next_addr);
+					}
+					if (ioctl_file) {
+						int curchar = fgetc(ioctl_file);
+						if (feof(ioctl_file) == 0) {
+							nextchar = curchar;
+							ioctl_next_addr++;
+						}
+					}
 				}
 			}
+			else {
+				complete = true;
+			}
 		}
-	}
-	else {
-		*ioctl_download = 0;
-		*ioctl_wr = 0;
+		else {
+
+			// Do a queue
+			if (currentDownload.contentQueue.empty()) {
+				console.AddLog("ioctl_download complete %d", ioctl_next_addr);
+				ioctl_active = false;
+				complete = true;
+			}
+			else {
+				*ioctl_download = 1;
+				*ioctl_wr = 1;
+				nextchar = currentDownload.contentQueue.front();
+				currentDownload.contentQueue.pop();
+				ioctl_next_addr++;
+			}
+		}
+
+		if (complete) {
+			ioctl_active = false;
+			*ioctl_download = 0;
+			*ioctl_wr = 0;
+		}
 	}
 }
 
@@ -102,9 +236,6 @@ void SimBus::AfterEval()
 {
 	*ioctl_addr = ioctl_next_addr;
 	*ioctl_dout = (unsigned char)nextchar;
-	if (ioctl_file) {
-		//	console.AddLog("ioctl_download %x wr %x dl %x\n", *ioctl_addr, *ioctl_wr, *ioctl_download);
-	}
 }
 
 

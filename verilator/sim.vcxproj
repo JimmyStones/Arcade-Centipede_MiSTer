@@ -94,6 +94,7 @@
     <ClInclude Include="sim\imgui\ImGuiFileDialog.h" />
     <ClInclude Include="sim\imgui\ImGuiFileDialogConfig.h" />
     <ClInclude Include="sim\imgui\implot.h" />
+    <ClInclude Include="sim\inc\rapidxml.hpp" />
     <ClInclude Include="sim\vinc\verilated.h" />
     <ClInclude Include="sim\sim_bus.h" />
     <ClInclude Include="sim\sim_clock.h" />
