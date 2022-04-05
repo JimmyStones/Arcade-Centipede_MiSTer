@@ -47,6 +47,18 @@ bool SimBus::HasQueue() {
 	return downloadQueue.size() > 0;
 }
 
+#ifdef _WIN32
+#include <io.h> 
+#define access    _access_s
+#else
+#include <unistd.h>
+#endif
+
+bool FileExists(const std::string& Filename)
+{
+	return access(Filename.c_str(), 0) == 0;
+}
+
 void SimBus::LoadMRA(std::string file) {
 
 	rapidxml::xml_document<> doc;
@@ -74,31 +86,63 @@ void SimBus::LoadMRA(std::string file) {
 
 			//console.AddLog("Loading rom: %d", indexValue);
 
-			std::string rom_zip_name = "";
+			std::vector<std::string> rom_names;
+
 			rapidxml::xml_attribute<>* rom_zip_name_att = rom_node->first_attribute("zip");
 			if (rom_zip_name_att != NULL) {
-				rom_zip_name = rom_zip_name_att->value();
-				rom_zip_name = rom_zip_name.substr(0, rom_zip_name.length() - 4);
+
+				std::istringstream zips;
+				zips.str(rom_zip_name_att->value());
+				std::string segment;
+				char splitChar = '|';
+				while (std::getline(zips, segment, splitChar))
+				{
+					rom_names.push_back(segment.substr(0, segment.length() - 4));
+					/*console.AddLog(rom_names.at(rom_names.size() - 1).c_str());*/
+				}
 			}
 
 			for (rapidxml::xml_node<>* part_node = rom_node->first_node("part"); part_node; part_node = part_node->next_sibling())
 			{
 				std::string part_name = "";
-				std::string part_zip_name = rom_zip_name;
 				rapidxml::xml_attribute<>* part_name_att = part_node->first_attribute("name");
 				if (part_name_att != NULL) {
 					part_name = part_name_att->value();
 				}
 				rapidxml::xml_attribute<>* part_zip_name_att = part_node->first_attribute("zip");
 				if (part_zip_name_att != NULL) {
-					part_zip_name = part_zip_name_att->value();
+
+					std::string part_zip_name = part_zip_name_att->value();
 					part_zip_name = part_zip_name.substr(0, part_zip_name.length() - 4);
+
+					bool zipFound = false;
+					for (int p = 0; p < rom_names.size(); p++) {
+						if (rom_names[p] == part_zip_name)
+						{
+							zipFound = true; break;
+						}
+					}
+					if (!zipFound) {
+						rom_names.push_back(part_zip_name);
+					}
 				}
 
 				if (part_name.length() > 0) {
-					std::string part_path = "roms/" + part_zip_name + "/" + part_name;
-					//console.AddLog("Loading ROM part from file: %s", part_path.c_str());
-					QueueDownload(part_path, indexValue, lastIndex != indexValue);
+					// Find rom part
+					bool partFound = false;
+					for (int p = 0; p < rom_names.size(); p++) {
+
+						std::string part_path = "roms/" + rom_names[p] + "/" + part_name;
+						if (FileExists(part_path)) {
+							//console.AddLog("Loading ROM part from file: %s", part_path.c_str());
+							QueueDownload(part_path, indexValue, lastIndex != indexValue);
+							partFound = true;
+							break;
+						}
+					}
+					if (!partFound) {
+						console.AddLog("Could not load ROM part in any known file: %s", part_name.c_str());
+					}
 				}
 				else {
 
