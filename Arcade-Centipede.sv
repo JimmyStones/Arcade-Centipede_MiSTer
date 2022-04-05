@@ -228,9 +228,8 @@ pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
-	.outclk_0(),
-	.outclk_1(clk_24),
-	.outclk_2(clk_12)
+	.outclk_0(clk_24),
+	.outclk_1(clk_12)
 	
 );
 

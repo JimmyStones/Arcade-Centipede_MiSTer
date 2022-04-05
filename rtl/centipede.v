@@ -423,22 +423,25 @@ module centipede(
 		assign mpu_clk = s_6mhz;
 		assign mpu_reset_n = ~mpu_reset;
 
-	//assign phi2 = ~phi0;
-	// T65 cpu(
-	// 	.mode(0),
-	// 	.res_n(mpu_reset_n),
-	// 	.enable(1),
-	// 	.clk(phi0),
-	// 	.rdy(~pause),
-	// 	.abort_n(1),
-	// 	.irq_n(irq_n),
-	// 	.nmi_n(1),
-	// 	.so_n(1),
-	// 	.r_w_n(rw_n),
-	// 	.a(ab),
-	// 	.di(db_in),
-	// 	.do(db_out)
-	// );
+	
+`ifndef SIMULATION
+	assign phi2 = ~phi0;
+	T65 cpu(
+		.Mode(0),
+		.Res_n(mpu_reset_n),
+		.Enable(1),
+		.Clk(phi0),
+		.Rdy(~pause),
+		.Abort_n(1),
+		.IRQ_n(irq_n),
+		.NMI_n(1),
+		.SO_n(1),
+		.R_W_n(rw_n),
+		.A(ab),
+		.DI(db_in),
+		.DO(db_out)
+	);
+`else
 	 p6502 p6502(
 		.clk(mpu_clk),
 		.reset_n(mpu_reset_n),
@@ -453,7 +456,7 @@ module centipede(
 		.din(db_in),
 		.dout(db_out)
 	);
-
+`endif
 
 	 // Address Decoder
 	assign write_n = ~(phi2 & ~rw_n);
