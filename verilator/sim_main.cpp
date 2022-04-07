@@ -90,8 +90,8 @@ double sc_time_stamp() {	// Called by $time in Verilog.
 	return main_time;
 }
 
-int clk_sys_freq = 48000000;
-SimClock clk_48(1); // 48mhz
+int clk_sys_freq = 24000000;
+SimClock clk_24(1); // 24mhz
 SimClock clk_12(2); // 12mhz
 
 
@@ -107,7 +107,7 @@ SimAudio audio(clk_sys_freq, true);
 void resetSim() {
 	main_time = 0;
 	top->RESET = 1;
-	clk_48.Reset();
+	clk_24.Reset();
 	clk_12.Reset();
 }
 
@@ -472,15 +472,15 @@ int verilate() {
 		if (main_time == initialReset) { top->RESET = 0; }
 
 		// Clock dividers
-		clk_48.Tick();
+		clk_24.Tick();
 		clk_12.Tick();
 
 		// Set clocks in core
-		top->clk_48 = clk_48.clk;
+		top->clk_24 = clk_24.clk;
 		top->clk_12 = clk_12.clk;
 
 		// Simulate both edges of system clock
-		if (clk_48.clk != clk_48.old) {
+		if (clk_24.clk != clk_24.old) {
 			if (clk_12.clk) {
 				input.BeforeEval();
 				bus.BeforeEval();
@@ -495,19 +495,19 @@ int verilate() {
 		}
 
 #ifndef DISABLE_AUDIO
-		if (clk_48.IsRising())
+		if (clk_24.IsRising())
 		{
 			audio.Clock(top->AUDIO_L, top->AUDIO_R);
 		}
 #endif
 
 		// Output pixels on rising edge of pixel clock
-		if (clk_48.IsRising() && top->top__DOT__ce_pix) {
+		if (clk_24.IsRising() && top->top__DOT__ce_pix) {
 			uint32_t colour = 0xFF000000 | top->VGA_B << 16 | top->VGA_G << 8 | top->VGA_R;
 			video.Clock(top->VGA_HB, top->VGA_VB, top->VGA_HS, top->VGA_VS, colour);
 		}
 
-		if (clk_48.IsRising()) {
+		if (clk_24.IsRising()) {
 			main_time++;
 		}
 		return 1;

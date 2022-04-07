@@ -3,7 +3,7 @@
 
 module top(
 
-	input clk_48 /*verilator public_flat*/,
+	input clk_24 /*verilator public_flat*/,
 	input clk_12 /*verilator public_flat*/,
 	input RESET/*verilator public_flat*/,
 	input [11:0]  inputs/*verilator public_flat*/,
@@ -68,27 +68,26 @@ module top(
 	assign AUDIO_R = AUDIO_L;
 
 	reg ce_pix;
-	always @(posedge clk_48) begin
+	always @(posedge clk_24) begin
 		reg old_clk;
-		
 		old_clk <= clk_12;
 		ce_pix <= old_clk & ~clk_12;
 	end
 
-	
-// PAUSE SYSTEM
-wire				pause_cpu;
-wire [8:0]		rgb_out;
-pause #(3,3,3,24) pause (
-	.*,
-	.clk_sys(clk_12),
-	.user_button(m_pause),
-	.pause_request(hs_pause),
-	.options(2'b11),
-	.r(rgb[2:0]),
-	.g(rgb[5:3]),
-	.b(rgb[8:6])
-);
+
+	// PAUSE SYSTEM
+	wire		pause_cpu;
+	wire [8:0]	rgb_out;
+	pause #(3,3,3,24) pause (
+		.*,
+		.clk_sys(clk_12),
+		.user_button(m_pause),
+		.pause_request(hs_pause),
+		.options(2'b11),
+		.r(rgb[2:0]),
+		.g(rgb[5:3]),
+		.b(rgb[8:6])
+	);
 
 	// Convert 3bpp output to 8bpp
 	assign VGA_R = {rgb_out[8:6],rgb_out[8:6],rgb_out[8:7]};
@@ -121,6 +120,8 @@ pause #(3,3,3,24) pause (
 		.flip_o(),
 		.v_flip(1'b1),
 		.h_flip(1'b0),
+
+		.clk_sys(clk_24),
 		.dn_addr(ioctl_addr[15:0]),
 		.dn_data(ioctl_dout),
 		.dn_wr(ioctl_wr && rom_download),
@@ -131,26 +132,26 @@ pause #(3,3,3,24) pause (
 		.hs_data_in(ioctl_dout),
 		.hs_write(ioctl_wr & nvram_download)
 
-		 );
+		);
 
-// HISCORE SYSTEM
-// --------------
-wire [5:0] hs_address;
-wire [7:0] hs_data_out;
-wire hs_pause;
+	// HISCORE SYSTEM
+	// --------------
+	wire [5:0] hs_address;
+	wire [7:0] hs_data_out;
+	wire hs_pause;
 
-nvram #(
-	.DUMPWIDTH(6),
-	.DUMPINDEX(4),
-	.PAUSEPAD(2)
-) hi (
-	.*,
-	.clk(clk_12),
-	.paused(pause_cpu),
-	.autosave(1'b1),
-	.nvram_address(hs_address),
-	.nvram_data_out(hs_data_out),
-	.pause_cpu(hs_pause)
-);
+	nvram #(
+		.DUMPWIDTH(6),
+		.DUMPINDEX(4),
+		.PAUSEPAD(2)
+	) hi (
+		.*,
+		.clk(clk_12),
+		.paused(pause_cpu),
+		.autosave(1'b1),
+		.nvram_address(hs_address),
+		.nvram_data_out(hs_data_out),
+		.pause_cpu(hs_pause)
+	);
 
 endmodule

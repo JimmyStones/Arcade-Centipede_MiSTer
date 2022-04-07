@@ -18,44 +18,44 @@
 `timescale 1 ps / 1 ps
 	
 module centipede(
-		input         clk_12mhz,
-		input         reset,
-		input         pause,
-		input [9:0]   playerinput_i,
-		input [7:0]   trakball_i,
-		output        flip_o,
-		input [7:0]   joystick_i,
-		input [7:0]   sw1_i,
-		input [7:0]   sw2_i,
-		input  [15:0] dn_addr,
-		input  [7:0]  dn_data,
-		input					dn_wr,
-		input 				v_flip,
-		input 				h_flip,
-		output [4:1]  led_o,
-		output [8:0]  rgb_o,
-		output        sync_o,
-		output        hsync_o,
-		output        vsync_o,
-		output        hblank_o,
-		output        vblank_o,
-		output [7:0]  audio_o,
-		output        clk_6mhz_o,
+		input			clk_12mhz,
+		input			reset,
+		input			pause,
+		input	[9:0]	playerinput_i,
+		input	[7:0]	trakball_i,
+		output			flip_o,
+		input	[7:0]	joystick_i,
+		input	[7:0]	sw1_i,
+		input	[7:0]	sw2_i,
+		input			clk_sys,
+		input	[15:0]	dn_addr,
+		input	[7:0]	dn_data,
+		input			dn_wr,
+		input			v_flip,
+		input			h_flip,
+		output	[4:1]	led_o,
+		output	[8:0]	rgb_o,
+		output			sync_o,
+		output			hsync_o,
+		output			vsync_o,
+		output			hblank_o,
+		output			vblank_o,
+		output	[7:0]	audio_o,
+		output			clk_6mhz_o,
 
 		 // Hiscore
-
-		 input	[5:0]	hs_address,
-		 input	[7:0]	hs_data_in,
-		 output	[7:0]	hs_data_out,
-		 input			hs_write
+		input	[5:0]	hs_address,
+		input	[7:0]	hs_data_in,
+		output	[7:0]	hs_data_out,
+		input			hs_write
 	);
 
-	 //
-	 wire s_12mhz;
-	 wire s_6mhz, s_6mhz_n;
+	//
+	wire s_12mhz;
+	wire s_6mhz, s_6mhz_n;
 
-	 wire phi0, phi2;
-	 reg 	phi0a, phi0a_temp;
+	wire phi0, phi2;
+	reg  phi0a, phi0a_temp;
 
 	 //
 	 wire rom_n;
@@ -257,7 +257,7 @@ module centipede(
 
 	dpram #(8) vprom
 	 (
-				.clock_a(clk_12mhz),
+				.clock_a(clk_sys),
 				.enable_a(1'b1),
 				.wren_a(dn_wr & prom_cs),
 				.address_a(dn_addr[7:0]),
@@ -351,7 +351,7 @@ module centipede(
 	// Program ROM
 	dpram #(13) rom
 	(
-		.clock_a(clk_12mhz),
+		.clock_a(clk_sys),
 		.enable_a(1'b1),
 		.wren_a(dn_wr & prog_rom_1_cs),
 		.address_a(dn_addr[12:0]),
@@ -716,7 +716,7 @@ module centipede(
 
 	dpram #(11) pf_rom1
 	(
-				.clock_a(clk_12mhz),
+				.clock_a(clk_sys),
 				.enable_a(1'b1),
 				.wren_a(dn_wr & prog_pf_rom_1_cs),
 				.address_a(dn_addr[10:0]),
@@ -733,7 +733,7 @@ module centipede(
 
 	dpram #(11) pf_rom0
 	(
-				.clock_a(clk_12mhz),
+				.clock_a(clk_sys),
 				.enable_a(1'b1),
 				.wren_a(dn_wr & prog_pf_rom_0_cs),
 				.address_a(dn_addr[10:0]),
@@ -906,14 +906,14 @@ module centipede(
 	
 	dpram #(6,8) hs_ram 
 	(
-		.clock_a(clk_12mhz),
+		.clock_a(clk_sys),
 		.address_a(earom_addr),
 		.data_a(earom_ctrl[2] == 1'b0 ? earom_in : 8'h00),
 		.q_a(earom_out),
 		.enable_a(s_6mhz && earom_ctrl[3]), // cs1
 		.wren_a(~earom_ctrl[1]), // c1
 
-		.clock_b(clk_12mhz),
+		.clock_b(clk_sys),
 		.enable_b(1'b1),
 		.address_b(hs_address[5:0]),
 		.data_b(hs_data_in),

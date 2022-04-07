@@ -220,7 +220,7 @@ localparam CONF_STR = {
 
 ////////////////////   CLOCKS   ///////////////////
 
-wire clk_sys=clk_12;
+wire clk_sys=clk_24;
 wire clk_24;
 wire clk_12;
 
@@ -427,28 +427,29 @@ wire clk_6_o;
 
 // game & cpu
 centipede uut(
-	 .clk_12mhz(clk_12),
-	 .reset(reset),
-	 .playerinput_i(playerinput_i),
-	 .trakball_i(trakball_i),
-	 .flip_o(flip_controls),
-	 .joystick_i(joystick_i),
-	 .sw1_i(sw[0]),
-	 .sw2_i(sw[1]),
-	 .led_o(led_o),
-	 .audio_o(audio),
+	.clk_12mhz(clk_12),
+	.reset(reset),
+	.playerinput_i(playerinput_i),
+	.trakball_i(trakball_i),
+	.flip_o(flip_controls),
+	.joystick_i(joystick_i),
+	.sw1_i(sw[0]),
+	.sw2_i(sw[1]),
+	.led_o(led_o),
+	.audio_o(audio),
 
-	 .dn_addr(ioctl_addr[15:0]),
-	 .dn_data(ioctl_dout),
-	 .dn_wr(ioctl_wr & rom_download),
-	 
-	 .rgb_o(rgb_in),
-	 .sync_o(),
-	 .hsync_o(hs),
-	 .vsync_o(vs),
-	 .hblank_o(hblank),
-	 .vblank_o(vblank),
-	 .clk_6mhz_o(clk_6_o),
+	.clk_sys(clk_sys),
+	.dn_addr(ioctl_addr[15:0]),
+	.dn_data(ioctl_dout),
+	.dn_wr(ioctl_wr & rom_download),
+
+	.rgb_o(rgb_in),
+	.sync_o(),
+	.hsync_o(hs),
+	.vsync_o(vs),
+	.hblank_o(hblank),
+	.vblank_o(vblank),
+	.clk_6mhz_o(clk_6_o),
 
 	.pause(pause_cpu),
 
@@ -457,7 +458,7 @@ centipede uut(
 	.hs_data_in(ioctl_dout),
 	.hs_write(ioctl_wr & nvram_download)
 
-	 );
+);
 
 // HISCORE SYSTEM
 // --------------
