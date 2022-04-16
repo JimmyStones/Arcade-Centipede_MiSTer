@@ -26,8 +26,8 @@ module centipede(
 		input [7:0]   trakball_i,
 		output        flip_o,
 		input [7:0]   joystick_i,
-		input [23:0]   sw1_i,
-		input [23:0]   sw2_i,
+		input [7:0]   sw1_i,
+		input [7:0]   sw2_i,
 		input  [15:0] dn_addr,
 		input  [7:0]  dn_data,
 		input					dn_wr,
@@ -82,7 +82,7 @@ module centipede(
 
 	 wire [15:0] ab;
 	 
-	 wire [23:0] db_in;
+	 wire [7:0] db_in;
 	 wire [7:0] db_out;
 
 	 wire [7:0] ram_out;
@@ -212,7 +212,7 @@ module centipede(
 	          h_counter <= h_counter + 12'd1;
 
 	 assign s_6mhz = h_counter[0];
-	 assign s_6mhz_en = !h_counter[0];
+	//  assign s_6mhz_en = !h_counter[0];
 	 assign s_1h   = h_counter[1];
 	 assign s_1h_en = h_counter[1:0] == 2'b01;
 	 assign s_2h   = h_counter[2];
@@ -236,7 +236,7 @@ module centipede(
 	assign pload_n = ~(s_1h & s_2h & s_4h);
 	
 	assign s_12mhz = clk_12mhz;
-	assign s_12mhz_n = ~clk_12mhz;
+	// assign s_12mhz_n = ~clk_12mhz;
 	assign s_6mhz_n = ~s_6mhz;
 	assign s_6mhz_n_en = h_counter[0];
 
@@ -311,7 +311,7 @@ module centipede(
 				.q_a(),
 
 				.clock_b(clk_12mhz),
-				.enable_b(s_6mhz),
+				.enable_b(1'b1),
 				.address_b(vprom_addr),
 				.wren_b(),
 				.data_b(),
@@ -424,10 +424,21 @@ module centipede(
 	*/
 
 	// ROM upload enables
-	wire prog_rom_1_cs = (dn_addr[13] == 1'b0);
-	wire prog_pf_rom_0_cs = (dn_addr[13:11]==3'b100);
-	wire prog_pf_rom_1_cs = (dn_addr[13:11]==3'b101);
-	wire prom_cs = (dn_addr[13:8]==6'b110000);
+	wire prog_rom_1_cs = (dn_addr[14] == 1'b0);
+	wire prog_pf_rom_0_cs = (dn_addr[14:11]==4'b1000);
+	wire prog_pf_rom_1_cs = (dn_addr[14:11]==4'b1000);
+	wire prom_cs = (dn_addr[14:8]==7'b1010000);
+
+	// always @(posedge clk_12mhz)
+	// begin
+	// 	if(dn_wr)
+	// 	begin
+	// 		if(prog_rom_1_cs) $display("addr: %4x %d prog_rom_1_cs", dn_addr, dn_addr);
+	// 		if(prog_pf_rom_0_cs) $display("addr: %4x %d prog_pf_rom_0_cs", dn_addr, dn_addr);
+	// 		if(prog_pf_rom_1_cs) $display("addr: %4x %d prog_pf_rom_1_cs", dn_addr, dn_addr);
+	// 		if(prom_cs) $display("addr: %4x %d prom_cs", dn_addr, dn_addr);
+	// 	end
+	// end
 	
 	// Mist versions (breaks Centipede and doesn't fix Millipede)
 	//wire prog_rom_1_cs = (!dn_addr[14]);
@@ -436,18 +447,18 @@ module centipede(
 	//wire prom_cs = (dn_addr[14:8]==7'b1010000);
 
 	// Program ROM
-	dpram #(13) rom
+	dpram #(14) rom
 	(
 		.clock_a(clk_12mhz),
 		.enable_a(1'b1),
 		.wren_a(dn_wr && prog_rom_1_cs),
-		.address_a(dn_addr[12:0]),
+		.address_a(dn_addr[13:0]),
 		.data_a(dn_data),
 		.q_a(),
 
 		.clock_b(clk_12mhz),
 		.enable_b(s_6mhz),
-		.address_b(ab[12:0]),
+		.address_b(ab[13:0]),
 		.wren_b(),
 		.data_b(),
 		.q_b(rom_out)
@@ -571,6 +582,7 @@ module centipede(
 	//
 	//   0010 xxxx xxxx xxxx  2000 rom_n
 	//   0000 1100 0000 0000  0c00 
+
 
 	assign adecode =
 		(ab[13:10] == 4'b0000) ? 10'b1111111110 :

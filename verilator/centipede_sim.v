@@ -43,14 +43,14 @@ module top(
 
 	// Hardcode default switches
 	//reg [23:0]  sw1 = 8'b01001100; // 5 lives
-	reg [23:0]  sw1 = 8'b01000000; // 2 lives
-	reg [23:0]  sw2 = 8'h02;
+	reg [7:0]  sw1 = 8'b01000000; // 2 lives
+	reg [7:0]  sw2 = 8'h02;
 	
 	wire  milliped  = core_mod[0];
 
 	// hardcode to game mode for testing
-	wire  [7:0] core_mod = 8'b0; // Centipede
-	//wire  [7:0] core_mod = 8'b1; // Millipede
+	//wire  [7:0] core_mod = 8'b0; // Centipede
+	wire  [7:0] core_mod = 8'b1; // Millipede
 	
 	// MAP INPUTS FROM SIM
 	// -------------------

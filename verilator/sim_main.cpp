@@ -41,8 +41,8 @@ int multi_step_amount = 1024;
 
 // Game mode
 // ---------
-bool milli = false; // Centipede
-//bool milli = true; // Millipede
+//bool milli = false; // Centipede
+bool milli = true; // Millipede
 
 // Debug GUI 
 // ---------
@@ -603,6 +603,10 @@ int main(int argc, char** argv, char** env) {
 		bus.QueueDownload("./roms/centiped/136001-408.e1", 0, false);
 		bus.QueueDownload("./roms/centiped/136001-409.fh1", 0, false);
 		bus.QueueDownload("./roms/centiped/136001-410.j1", 0, false);
+		bus.QueueDownload("./roms/centiped/136001-407.d1", 0, false);
+		bus.QueueDownload("./roms/centiped/136001-408.e1", 0, false);
+		bus.QueueDownload("./roms/centiped/136001-409.fh1", 0, false);
+		bus.QueueDownload("./roms/centiped/136001-410.j1", 0, false);
 		bus.QueueDownload("./roms/centiped/136001-211.f7", 0, false);
 		bus.QueueDownload("./roms/centiped/136001-212.hj7", 0, false);
 		bus.QueueDownload("./roms/centiped/136001-213.p4", 0, false);
@@ -688,15 +692,15 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::Begin("PFROM 2");
 		//mem_edit.DrawContents(&top->top__DOT__uut__DOT__pf_rom1__DOT__mem, 2048, 0);
 		//ImGui::End();
-		//ImGui::Begin("VPROM");
-		//mem_edit.DrawContents(&top->top__DOT__uut__DOT__vprom__DOT__mem, 2048, 0);
+		ImGui::Begin("VPROM");
+		mem_edit.DrawContents(&top->top__DOT__uut__DOT__vprom__DOT__mem, 256, 0);
+		ImGui::End();
+		//ImGui::Begin("RAM");
+		//mem_edit.DrawContents(&top->top__DOT__uut__DOT__ram__DOT__mem, 2048, 0);
 		//ImGui::End();
-		ImGui::Begin("RAM");
-		mem_edit.DrawContents(&top->top__DOT__uut__DOT__ram__DOT__mem, 2048, 0);
-		ImGui::End();
-		ImGui::Begin("EAROM");
-		mem_edit.DrawContents(&top->top__DOT__uut__DOT__hs_ram__DOT__mem, 64, 0);
-		ImGui::End();
+		//ImGui::Begin("EAROM");
+		//mem_edit.DrawContents(&top->top__DOT__uut__DOT__hs_ram__DOT__mem, 64, 0);
+		//ImGui::End();
 
 		int windowX = 550;
 		int windowWidth = (VGA_WIDTH * VGA_SCALE_X) + 24;
